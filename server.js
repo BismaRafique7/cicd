@@ -6,37 +6,38 @@ require('dotenv').config();
 
 const app = express();
 
-// Serve static HTML/CSS/JS files from public folder
-app.use(express.static('public'));
-
-// Enable CORS
+// Middleware
 app.use(cors());
-
-// Parse JSON
 app.use(bodyParser.json());
+app.use(express.static('public')); // Serve HTML/CSS/JS
 
-// Mongo URI
+// MongoDB connection
 const mongoURI = process.env.MONGO_URI;
 mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('MongoDB connected'))
+  .then(() => console.log('✅ MongoDB connected'))
   .catch(err => {
-    console.error('MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   });
 
-// Mongoose User Model
+// User Schema
 const userSchema = new mongoose.Schema({
   username: String,
-  email: String,
+  email: { type: String, unique: true },
   password: String,
+  phone: String,
+  age: Number,
+  address: String,
 });
+
 const User = mongoose.model('User', userSchema);
 
-// Register Route
+// Register route
 app.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
-    if (!username || !email || !password) {
+    const { username, email, password, phone, age, address } = req.body;
+
+    if (!username || !email || !password || !phone || !age || !address) {
       return res.status(400).json({ message: 'Please provide all required fields' });
     }
 
@@ -45,7 +46,7 @@ app.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const newUser = new User({ username, email, password });
+    const newUser = new User({ username, email, password, phone, age, address });
     await newUser.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
@@ -54,8 +55,8 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Run server
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
